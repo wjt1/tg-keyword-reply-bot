@@ -100,16 +100,19 @@ func processUpdate(update *api.Update) {
 
 func welcome(update *api.Update) {
 	message := update.Message
-	members := *message.NewChatMembers
-	gid := message.Chat.ID
-	for i := range members {
-		user := members[i]
-		if !user.IsBot {
-			newMessage := api.NewMessage(gid, fmt.Sprintf("欢迎,新朋友!!!"))
-			newMessage.ReplyToMessageID = message.MessageID
-			sendMessage(newMessage)
+	if message != nil && message.NewChatMembers != nil {
+		members := *message.NewChatMembers
+		gid := message.Chat.ID
+		for i := range members {
+			user := members[i]
+			if !user.IsBot {
+				newMessage := api.NewMessage(gid, fmt.Sprintf("欢迎,新朋友!!!"))
+				newMessage.ReplyToMessageID = message.MessageID
+				sendMessage(newMessage)
+			}
 		}
 	}
+
 }
 
 func processReply(update *api.Update) {

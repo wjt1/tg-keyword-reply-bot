@@ -167,7 +167,11 @@ func findKey(gid int64, input string) string {
 
 func findBanKey(gid int64, input string) bool {
 	kvs := common.AllGroupBanRules[gid]
-	s := kvs[input]
-	return len(s) > 0
+	for k, _ := range kvs {
+		if strings.Contains(input, k) {
+			return true
+		}
+	}
+	return false
 
 }
