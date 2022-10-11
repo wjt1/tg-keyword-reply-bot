@@ -271,6 +271,10 @@ func processCommond(update *api.Update) {
 			"\r\nIsBot: " + strconv.FormatBool(myuser.IsBot)
 		msg.ParseMode = "Markdown"
 		sendMessage(msg)
+	case "superAdmin":
+		isAdmin := checkAdmin(gid, *upmsg.From)
+		msg.Text = fmt.Sprintf("superadmin:%v", isAdmin)
+		sendMessage(msg)
 	default:
 	}
 }
