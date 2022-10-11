@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"regexp"
 	"strconv"
 	"strings"
@@ -22,9 +23,12 @@ const delText = "格式要求:\r\n" +
 /**
  * 添加规则
  */
-func addRule(gid int64, rule string) {
+func addRule(gid int64, rule string) error {
 	rules := common.AllGroupRules[gid]
 	r := strings.Split(rule, "===")
+	if len(r) != 2 {
+		return errors.New("添加失败")
+	}
 	keys, value := r[0], r[1]
 	if strings.Contains(keys, "||") {
 		ks := strings.Split(keys, "||")
@@ -35,6 +39,7 @@ func addRule(gid int64, rule string) {
 		_addOneRule(keys, value, rules)
 	}
 	db.UpdateGroupRule(gid, rules.String())
+	return nil
 }
 
 /**

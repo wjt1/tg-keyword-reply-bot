@@ -138,10 +138,11 @@ func processCommond(update *api.Update) {
 	case "add":
 		if checkAdmin(gid, *upmsg.From) {
 			order := upmsg.CommandArguments()
-			if order != "" {
-				addRule(gid, order)
+			err := addRule(gid, order)
+			if err == nil {
 				msg.Text = "规则添加成功: " + order
 			} else {
+				log.Printf("add err:+%v", err)
 				msg.Text = addText
 				msg.ParseMode = "Markdown"
 				msg.DisableWebPagePreview = true
