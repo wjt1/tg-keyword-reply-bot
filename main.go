@@ -106,7 +106,7 @@ func welcome(update *api.Update) {
 		for i := range members {
 			user := members[i]
 			if !user.IsBot {
-				newMessage := api.NewMessage(gid, fmt.Sprintf("欢迎,新朋友!!!"))
+				newMessage := api.NewMessage(gid, fmt.Sprintf("Woops,欢迎,我的宝贝!!!"))
 				newMessage.ReplyToMessageID = message.MessageID
 				sendMessage(newMessage)
 			}
