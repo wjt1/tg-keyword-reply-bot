@@ -20,6 +20,11 @@ type rule struct {
 	GroupId  int64 `gorm:"unique;not null"`
 	RuleJson string
 }
+type banRule struct {
+	gorm.Model
+	GroupId  int64 `gorm:"unique;not null"`
+	RuleJson string
+}
 
 // Init 数据库初始化，包括新建数据库（如果还没有建立），基本数据的读写
 func Init(newToken string) (token string) {
@@ -28,7 +33,7 @@ func Init(newToken string) (token string) {
 		panic("failed to connect database")
 	}
 	db = dbtmp
-	db.AutoMigrate(&setting{}, &rule{})
+	db.AutoMigrate(&setting{}, &rule{}, &banRule{})
 	var tokenSetting setting
 	db.Find(&tokenSetting, "Key=?", "token")
 	token = tokenSetting.Value
@@ -45,6 +50,7 @@ func Init(newToken string) (token string) {
 		}
 	}
 	readAllGroupRules()
+	readAllGroupBanRules()
 	return
 }
 
@@ -67,6 +73,29 @@ func readAllGroupRules() {
 	for _, rule := range allGroupRules {
 		ruleStruct := common.Json2kvs(rule.RuleJson)
 		common.AllGroupRules[rule.GroupId] = ruleStruct
+		common.AllGroupId = append(common.AllGroupId, rule.GroupId)
+	}
+}
+
+// AddNewBanGroup 数据库中添加一条记录来记录新群组的规则
+func AddNewBanGroup(groupId int64) {
+	db.Create(&banRule{
+		GroupId:  groupId,
+		RuleJson: "",
+	})
+}
+
+// UpdateGroupBanRule 更新群组的规则
+func UpdateGroupBanRule(groupId int64, ruleJson string) {
+	db.Model(&banRule{}).Where("group_id=?", groupId).Update("rule_json", ruleJson)
+}
+
+func readAllGroupBanRules() {
+	var allGroupRules []banRule
+	db.Find(&allGroupRules)
+	for _, rule := range allGroupRules {
+		ruleStruct := common.Json2kvs(rule.RuleJson)
+		common.AllGroupBanRules[rule.GroupId] = ruleStruct
 		common.AllGroupId = append(common.AllGroupId, rule.GroupId)
 	}
 }

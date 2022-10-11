@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"math/rand"
 	"strconv"
@@ -23,8 +24,8 @@ var (
 )
 
 func main() {
-	botToken := flag.String("t", "", "your bot Token")
-	flag.IntVar(&superUserId, "s", 0, "super manager Id")
+	botToken := flag.String("t", "5529816029:AAEVeN-FXqj8YPC5ZDGUFlaSyYg8-xSav5c", "your bot Token")
+	flag.IntVar(&superUserId, "s", 5196911372, "super manager Id")
 	flag.BoolVar(&debug, "d", false, "debug mode")
 	flag.Parse()
 	token := db.Init(*botToken)
@@ -69,13 +70,16 @@ func processUpdate(update *api.Update) {
 	in := checkInGroup(gid)
 	if !in { //不在就需要加入, 内存中加一份, 数据库中添加一条空规则记录
 		common.AddNewGroup(gid)
+		common.AddNewGroupBan(gid)
 		db.AddNewGroup(gid)
+		db.AddNewBanGroup(gid)
 	}
 	if upmsg.IsCommand() {
 		go processCommond(update)
 	} else {
 		go processReplyCommond(update)
 		go processReply(update)
+		go welcome(update)
 		//新用户通过用户名检查是否是清真
 		if upmsg.NewChatMembers != nil {
 			for _, auser := range *(upmsg.NewChatMembers) {
@@ -90,6 +94,20 @@ func processUpdate(update *api.Update) {
 		if checkQingzhen(upmsg.Text) {
 			_, _ = bot.DeleteMessage(api.NewDeleteMessage(gid, upmsg.MessageID))
 			banMember(gid, uid, -1)
+		}
+	}
+}
+
+func welcome(update *api.Update) {
+	message := update.Message
+	members := *message.NewChatMembers
+	gid := message.Chat.ID
+	for i := range members {
+		user := members[i]
+		if !user.IsBot {
+			newMessage := api.NewMessage(gid, fmt.Sprintf("欢迎,新朋友!!!"))
+			newMessage.ReplyToMessageID = message.MessageID
+			sendMessage(newMessage)
 		}
 	}
 }
@@ -122,6 +140,12 @@ func processReply(update *api.Update) {
 		msg.ReplyToMessageID = upmsg.MessageID
 		sendMessage(msg)
 	}
+
+	if findBanKey(gid, upmsg.Text) {
+		_, _ = bot.DeleteMessage(api.NewDeleteMessage(gid, upmsg.MessageID))
+		banMember(gid, uid, 60)
+	}
+
 }
 
 func processCommond(update *api.Update) {
@@ -135,9 +159,25 @@ func processCommond(update *api.Update) {
 	case "start", "help":
 		msg.Text = "本机器人能够自动回复特定关键词"
 		sendMessage(msg)
+	case "addban":
+		//添加关键词禁言
+		if checkAdmin(gid, *upmsg.From) {
+			order := strings.TrimSpace(upmsg.CommandArguments())
+			err := addBanRule(gid, order)
+			if err == nil {
+				msg.Text = "规则添加成功: " + order
+			} else {
+				log.Printf("add err:%v", err)
+				msg.Text = addTextBan
+				msg.ParseMode = "Markdown"
+				msg.DisableWebPagePreview = true
+			}
+			sendMessage(msg)
+		}
+
 	case "add":
 		if checkAdmin(gid, *upmsg.From) {
-			order := upmsg.CommandArguments()
+			order := strings.TrimSpace(upmsg.CommandArguments())
 			err := addRule(gid, order)
 			if err == nil {
 				msg.Text = "规则添加成功: " + order
@@ -151,7 +191,7 @@ func processCommond(update *api.Update) {
 		}
 	case "del":
 		if checkAdmin(gid, *upmsg.From) {
-			order := upmsg.CommandArguments()
+			order := strings.TrimSpace(upmsg.CommandArguments())
 			if order != "" {
 				delRule(gid, order)
 				msg.Text = "规则删除成功: " + order
@@ -161,9 +201,35 @@ func processCommond(update *api.Update) {
 			}
 			sendMessage(msg)
 		}
+	case "delban":
+		if checkAdmin(gid, *upmsg.From) {
+			order := strings.TrimSpace(upmsg.CommandArguments())
+			if order != "" {
+				delBanRule(gid, order)
+				msg.Text = "规则删除成功: " + order
+			} else {
+				msg.Text = delBanText
+				msg.ParseMode = "Markdown"
+			}
+			sendMessage(msg)
+		}
 	case "list":
 		if checkAdmin(gid, *upmsg.From) {
 			rulelists := getRuleList(gid)
+			msg.Text = "ID: " + strconv.FormatInt(gid, 10)
+			msg.ParseMode = "Markdown"
+			msg.DisableWebPagePreview = true
+			sendMessage(msg)
+			for _, rlist := range rulelists {
+				msg.Text = rlist
+				msg.ParseMode = "Markdown"
+				msg.DisableWebPagePreview = true
+				sendMessage(msg)
+			}
+		}
+	case "listban":
+		if checkAdmin(gid, *upmsg.From) {
+			rulelists := getBanRuleList(gid)
 			msg.Text = "ID: " + strconv.FormatInt(gid, 10)
 			msg.ParseMode = "Markdown"
 			msg.DisableWebPagePreview = true
