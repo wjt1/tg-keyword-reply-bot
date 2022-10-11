@@ -24,7 +24,7 @@ var (
 )
 
 func main() {
-	botToken := flag.String("t", "5529816029:AAEVeN-FXqj8YPC5ZDGUFlaSyYg8-xSav5c", "your bot Token")
+	botToken := flag.String("t", "5559099006:AAG1_jHXzPQAKgychcRx_eR9fLfz9uI6K-c", "your bot Token")
 	flag.IntVar(&superUserId, "s", 5571175131, "super manager Id")
 	flag.BoolVar(&debug, "d", false, "debug mode")
 	flag.Parse()
