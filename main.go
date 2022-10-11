@@ -142,7 +142,7 @@ func processCommond(update *api.Update) {
 			if err == nil {
 				msg.Text = "规则添加成功: " + order
 			} else {
-				log.Printf("add err:+%v", err)
+				log.Printf("add err:%v", err)
 				msg.Text = addText
 				msg.ParseMode = "Markdown"
 				msg.DisableWebPagePreview = true
